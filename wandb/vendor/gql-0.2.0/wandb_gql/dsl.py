@@ -1,4 +1,4 @@
-import collections
+import collections.abc
 import decimal
 from functools import partial
 
@@ -133,7 +133,7 @@ def query(*fields):
 
 
 def serialize_list(serializer, values):
-    assert isinstance(values, collections.Iterable), 'Expected iterable, received "{}"'.format(repr(values))
+    assert isinstance(values, collections.abc.Iterable), 'Expected iterable, received "{}"'.format(repr(values))
     return [serializer(v) for v in values]
 
 

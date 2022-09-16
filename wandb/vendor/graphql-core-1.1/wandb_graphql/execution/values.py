@@ -1,4 +1,4 @@
-import collections
+import collections.abc
 import json
 
 from ..error import GraphQLError
@@ -119,7 +119,7 @@ def coerce_value(type, value):
 
     if isinstance(type, GraphQLList):
         item_type = type.of_type
-        if not isinstance(value, str) and isinstance(value, collections.Iterable):
+        if not isinstance(value, str) and isinstance(value, collections.abc.Iterable):
             return [coerce_value(item_type, item) for item in value]
         else:
             return [coerce_value(item_type, value)]
