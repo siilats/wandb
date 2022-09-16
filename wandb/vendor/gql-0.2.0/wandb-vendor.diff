@@ -75,12 +75,12 @@ index 71399a5..305ca8a 100644
 +++ b/wandb/vendor/gql-0.2.0/wandb_gql/transport/requests.py
 @@ -1,8 +1,8 @@
  from __future__ import absolute_import
- 
+
  import requests
 -from graphql.execution import ExecutionResult
 -from graphql.language.printer import print_ast
 +from wandb_graphql.execution import ExecutionResult
 +from wandb_graphql.language.printer import print_ast
- 
+
  from .http import HTTPTransport
- 
+

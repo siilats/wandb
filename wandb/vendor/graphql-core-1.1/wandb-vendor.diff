@@ -5,11 +5,11 @@ index 44126cd..0bdf45b 100644
 @@ -1,4 +1,3 @@
 -import six
  from ..language.location import get_location
- 
- 
+
+
 @@ -6,7 +5,7 @@ class GraphQLError(Exception):
      __slots__ = 'message', 'nodes', 'stack', 'original_error', '_source', '_positions'
- 
+
      def __init__(self, message, nodes=None, stack=None, source=None, positions=None):
 -        super(GraphQLError, self).__init__(message)
 +        super().__init__(message)
@@ -17,14 +17,14 @@ index 44126cd..0bdf45b 100644
          self.nodes = nodes
          self.stack = stack
 @@ -32,7 +31,7 @@ class GraphQLError(Exception):
- 
+
      def reraise(self):
          if self.stack:
 -            six.reraise(type(self), self, self.stack)
 +            raise self.with_traceback(self.stack)
          else:
              raise self
- 
+
 diff --git a/wandb/vendor/graphql-core-1.1/wandb_graphql/execution/executor.py b/wandb/vendor/graphql-core-1.1/wandb_graphql/execution/executor.py
 index 202ba98..8447be6 100644
 --- a/wandb/vendor/graphql-core-1.1/wandb_graphql/execution/executor.py
@@ -32,38 +32,38 @@ index 202ba98..8447be6 100644
 @@ -3,7 +3,6 @@ import functools
  import logging
  import sys
- 
+
 -from six import string_types
  from promise import Promise, promise_for_dict, is_thenable
- 
+
  from ..error import GraphQLError, GraphQLLocatedError
 @@ -287,7 +286,7 @@ def complete_value(exe_context, return_type, field_asts, info, result):
      if isinstance(return_type, GraphQLObjectType):
          return complete_object_value(exe_context, return_type, field_asts, info, result)
- 
+
 -    assert False, u'Cannot complete value of unexpected type "{}".'.format(return_type)
 +    assert False, f'Cannot complete value of unexpected type "{return_type}".'
- 
- 
+
+
  def complete_list_value(exe_context, return_type, field_asts, info, result):
 @@ -335,7 +334,7 @@ def complete_abstract_value(exe_context, return_type, field_asts, info, result):
          else:
              runtime_type = get_default_resolve_type_fn(result, exe_context.context_value, info, return_type)
- 
+
 -    if isinstance(runtime_type, string_types):
 +    if isinstance(runtime_type, str):
          runtime_type = info.schema.get_type(runtime_type)
- 
+
      if not isinstance(runtime_type, GraphQLObjectType):
 @@ -353,7 +352,7 @@ def complete_abstract_value(exe_context, return_type, field_asts, info, result):
- 
+
      if not exe_context.schema.is_possible_type(return_type, runtime_type):
          raise GraphQLError(
 -            u'Runtime Object type "{}" is not a possible type for "{}".'.format(runtime_type, return_type),
 +            f'Runtime Object type "{runtime_type}" is not a possible type for "{return_type}".',
              field_asts
          )
- 
+
 @@ -373,7 +372,7 @@ def complete_object_value(exe_context, return_type, field_asts, info, result):
      """
      if return_type.is_type_of and not return_type.is_type_of(result, exe_context.context_value, info):
@@ -72,7 +72,7 @@ index 202ba98..8447be6 100644
 +            f'Expected value of type "{return_type}" but got: {type(result).__name__}.',
              field_asts
          )
- 
+
 @@ -391,7 +390,7 @@ def complete_nonnull_value(exe_context, return_type, field_asts, info, result):
      )
      if completed is None:
@@ -81,7 +81,7 @@ index 202ba98..8447be6 100644
 +            f'Cannot return null for non-nullable field {info.parent_type}.{info.field_name}.',
              field_asts
          )
- 
+
 diff --git a/wandb/vendor/graphql-core-1.1/wandb_graphql/execution/experimental/resolver.py b/wandb/vendor/graphql-core-1.1/wandb_graphql/execution/experimental/resolver.py
 index 75f5b7d..49d4e28 100644
 --- a/wandb/vendor/graphql-core-1.1/wandb_graphql/execution/experimental/resolver.py
@@ -102,7 +102,7 @@ index 5600846..d992b87 100644
 @@ -1,8 +1,6 @@
  import collections
  import json
- 
+
 -from six import string_types
 -
  from ..error import GraphQLError
@@ -111,14 +111,14 @@ index 5600846..d992b87 100644
 @@ -97,7 +95,7 @@ def get_variable_value(schema, definition_ast, input):
              [definition_ast]
          )
- 
+
 -    message = (u'\n' + u'\n'.join(errors)) if errors else u''
 +    message = ('\n' + '\n'.join(errors)) if errors else ''
      raise GraphQLError(
          'Variable "${}" got invalid value {}.{}'.format(
              variable.name.value,
 @@ -121,7 +119,7 @@ def coerce_value(type, value):
- 
+
      if isinstance(type, GraphQLList):
          item_type = type.of_type
 -        if not isinstance(value, string_types) and isinstance(value, collections.Iterable):
@@ -132,23 +132,23 @@ index 711525e..f03f631 100644
 +++ b/wandb/vendor/graphql-core-1.1/wandb_graphql/language/lexer.py
 @@ -1,14 +1,12 @@
  import json
- 
+
 -from six import unichr
 -
  from ..error import GraphQLSyntaxError
- 
+
  __all__ = ['Token', 'Lexer', 'TokenKind',
             'get_token_desc', 'get_token_kind_desc']
- 
- 
+
+
 -class Token(object):
 +class Token:
      __slots__ = 'kind', 'start', 'end', 'value'
- 
+
      def __init__(self, kind, start, end, value=None):
 @@ -18,7 +16,7 @@ class Token(object):
          self.value = value
- 
+
      def __repr__(self):
 -        return u'<Token kind={} at {}..{} value={}>'.format(
 +        return '<Token kind={} at {}..{} value={}>'.format(
@@ -157,24 +157,24 @@ index 711525e..f03f631 100644
              self.end,
 @@ -32,7 +30,7 @@ class Token(object):
                  self.value == other.value)
- 
- 
+
+
 -class Lexer(object):
 +class Lexer:
      __slots__ = 'source', 'prev_position'
- 
+
      def __init__(self, source):
 @@ -47,7 +45,7 @@ class Lexer(object):
          return token
- 
- 
+
+
 -class TokenKind(object):
 +class TokenKind:
      EOF = 1
      BANG = 2
      DOLLAR = 3
 @@ -71,7 +69,7 @@ class TokenKind(object):
- 
+
  def get_token_desc(token):
      if token.value:
 -        return u'{} "{}"'.format(
@@ -184,13 +184,13 @@ index 711525e..f03f631 100644
          )
 @@ -134,7 +132,7 @@ def print_char_code(code):
          return '<EOF>'
- 
+
      if code < 0x007F:
 -        return json.dumps(unichr(code))
 +        return json.dumps(chr(code))
- 
+
      return '"\\u%04X"' % code
- 
+
 @@ -158,7 +156,7 @@ def read_token(source, from_position):
      if code < 0x0020 and code not in (0x0009, 0x000A, 0x000D):
          raise GraphQLSyntaxError(
@@ -198,25 +198,25 @@ index 711525e..f03f631 100644
 -            u'Invalid character {}.'.format(print_char_code(code))
 +            f'Invalid character {print_char_code(code)}.'
          )
- 
+
      kind = PUNCT_CODE_TO_KIND.get(code)
 @@ -181,7 +179,7 @@ def read_token(source, from_position):
- 
+
      raise GraphQLSyntaxError(
          source, position,
 -        u'Unexpected character {}.'.format(print_char_code(code)))
 +        f'Unexpected character {print_char_code(code)}.')
- 
- 
+
+
  ignored_whitespace_characters = frozenset([
 @@ -223,7 +221,7 @@ def position_after_whitespace(body, start_position):
- 
- 
+
+
  def read_number(source, start, first_code):
 -    """Reads a number token from the source file, either a float
 +    r"""Reads a number token from the source file, either a float
      or an int depending on whether a decimal point appears.
- 
+
      Int:   -?(0|[1-9][0-9]*)
 @@ -245,7 +243,7 @@ def read_number(source, start, first_code):
              raise GraphQLSyntaxError(
@@ -234,8 +234,8 @@ index 711525e..f03f631 100644
 -        u'Invalid number, expected digit but got: {}.'.format(print_char_code(code))
 +        f'Invalid number, expected digit but got: {print_char_code(code)}.'
      )
- 
- 
+
+
 @@ -342,7 +340,7 @@ def read_string(source, start):
              raise GraphQLSyntaxError(
                  source,
@@ -243,7 +243,7 @@ index 711525e..f03f631 100644
 -                u'Invalid character within String: {}.'.format(print_char_code(code))
 +                f'Invalid character within String: {print_char_code(code)}.'
              )
- 
+
          position += 1
 @@ -365,15 +363,15 @@ def read_string(source, start):
                  if char_code < 0:
@@ -252,7 +252,7 @@ index 711525e..f03f631 100644
 -                        u'Invalid character escape sequence: \\u{}.'.format(body[position + 1: position + 5])
 +                        f'Invalid character escape sequence: \\u{body[position + 1: position + 5]}.'
                      )
- 
+
 -                append(unichr(char_code))
 +                append(chr(char_code))
                  position += 4
@@ -262,16 +262,16 @@ index 711525e..f03f631 100644
 -                    u'Invalid character escape sequence: \\{}.'.format(unichr(code))
 +                    f'Invalid character escape sequence: \\{chr(code)}.'
                  )
- 
+
              position += 1
 @@ -383,7 +381,7 @@ def read_string(source, start):
          raise GraphQLSyntaxError(source, position, 'Unterminated string')
- 
+
      append(body[chunk_start:position])
 -    return Token(TokenKind.STRING, start, position + 1, u''.join(value))
 +    return Token(TokenKind.STRING, start, position + 1, ''.join(value))
- 
- 
+
+
  def uni_char_code(a, b, c, d):
 diff --git a/wandb/vendor/graphql-core-1.1/wandb_graphql/language/parser.py b/wandb/vendor/graphql-core-1.1/wandb_graphql/language/parser.py
 index 21adac9..3c57857 100644
@@ -286,47 +286,47 @@ index 21adac9..3c57857 100644
 @@ -14,7 +12,7 @@ def parse(source, **kwargs):
      options.update(kwargs)
      source_obj = source
- 
+
 -    if isinstance(source, string_types):
 +    if isinstance(source, str):
          source_obj = Source(source)
- 
+
      parser = Parser(source_obj, options)
 @@ -26,14 +24,14 @@ def parse_value(source, **kwargs):
      options.update(kwargs)
      source_obj = source
- 
+
 -    if isinstance(source, string_types):
 +    if isinstance(source, str):
          source_obj = Source(source)
- 
+
      parser = Parser(source_obj, options)
      return parse_value_literal(parser, False)
- 
- 
+
+
 -class Parser(object):
 +class Parser:
      __slots__ = 'lexer', 'source', 'options', 'prev_end', 'token'
- 
+
      def __init__(self, source, options):
 @@ -44,7 +42,7 @@ class Parser(object):
          self.token = self.lexer.next_token()
- 
- 
+
+
 -class Loc(object):
 +class Loc:
      __slots__ = 'start', 'end', 'source'
- 
+
      def __init__(self, start, end, source=None):
 @@ -53,8 +51,8 @@ class Loc(object):
          self.source = source
- 
+
      def __repr__(self):
 -        source = ' source={}'.format(self.source) if self.source else ''
 -        return '<Loc start={} end={}{}>'.format(self.start, self.end, source)
 +        source = f' source={self.source}' if self.source else ''
 +        return f'<Loc start={self.start} end={self.end}{source}>'
- 
+
      def __eq__(self, other):
          return (
 @@ -112,7 +110,7 @@ def expect(parser, kind):
@@ -345,8 +345,8 @@ index 21adac9..3c57857 100644
 -        u'Expected "{}", found {}'.format(value, get_token_desc(token))
 +        f'Expected "{value}", found {get_token_desc(token)}'
      )
- 
- 
+
+
 @@ -142,7 +140,7 @@ def unexpected(parser, at_token=None):
      return GraphQLSyntaxError(
          parser.source,
@@ -354,44 +354,44 @@ index 21adac9..3c57857 100644
 -        u'Unexpected {}'.format(get_token_desc(token))
 +        f'Unexpected {get_token_desc(token)}'
      )
- 
- 
+
+
 diff --git a/wandb/vendor/graphql-core-1.1/wandb_graphql/language/visitor.py b/wandb/vendor/graphql-core-1.1/wandb_graphql/language/visitor.py
 index a77c36e..6d1dfd4 100644
 --- a/wandb/vendor/graphql-core-1.1/wandb_graphql/language/visitor.py
 +++ b/wandb/vendor/graphql-core-1.1/wandb_graphql/language/visitor.py
 @@ -1,12 +1,10 @@
  from copy import copy
- 
+
 -import six
 -
  from . import ast
  from .visitor_meta import QUERY_DOCUMENT_KEYS, VisitorMeta
- 
- 
+
+
 -class Falsey(object):
 +class Falsey:
- 
+
      def __nonzero__(self):
          return False
 @@ -19,7 +17,7 @@ BREAK = object()
  REMOVE = Falsey()
- 
- 
+
+
 -class Stack(object):
 +class Stack:
      __slots__ = 'in_array', 'index', 'keys', 'edits', 'prev'
- 
+
      def __init__(self, in_array, index, keys, edits, prev):
 @@ -158,8 +156,7 @@ def visit(root, visitor, key_map=None):
      return new_root
- 
- 
+
+
 -@six.add_metaclass(VisitorMeta)
 -class Visitor(object):
 +class Visitor(metaclass=VisitorMeta):
      __slots__ = ()
- 
+
      def enter(self, node, key, parent, path, ancestors):
 diff --git a/wandb/vendor/graphql-core-1.1/wandb_graphql/pyutils/version.py b/wandb/vendor/graphql-core-1.1/wandb_graphql/pyutils/version.py
 index f733911..614df9f 100644
@@ -415,32 +415,32 @@ index bae7a9c..2d665bd 100644
 -
  from ..language.ast import BooleanValue, FloatValue, IntValue, StringValue
  from .definition import GraphQLScalarType
- 
+
 @@ -68,20 +66,20 @@ GraphQLFloat = GraphQLScalarType(
- 
- 
+
+
  def coerce_string(value):
 -    if isinstance(value, string_types):
 +    if isinstance(value, str):
          return value
- 
+
      if isinstance(value, bool):
 -        return u'true' if value else u'false'
 +        return 'true' if value else 'false'
- 
+
 -    return text_type(value)
 +    return str(value)
- 
- 
+
+
  def coerce_str(value):
 -    if isinstance(value, string_types):
 +    if isinstance(value, str):
          return value
- 
+
 -    return text_type(value)
 +    return str(value)
- 
- 
+
+
  def parse_string_literal(ast):
 diff --git a/wandb/vendor/graphql-core-1.1/wandb_graphql/utils/ast_from_value.py b/wandb/vendor/graphql-core-1.1/wandb_graphql/utils/ast_from_value.py
 index d41a91d..1355ef5 100644
@@ -449,21 +449,21 @@ index d41a91d..1355ef5 100644
 @@ -2,8 +2,6 @@ import json
  import re
  import sys
- 
+
 -from six import string_types
 -
  from ..language import ast
  from ..type.definition import (GraphQLEnumType, GraphQLInputObjectType,
                                 GraphQLList, GraphQLNonNull)
 @@ -40,7 +38,7 @@ def ast_from_value(value, type=None):
- 
+
          return ast.FloatValue(string_num)
- 
+
 -    if isinstance(value, string_types):
 +    if isinstance(value, str):
          if isinstance(type, GraphQLEnumType) and re.match(r'^[_a-zA-Z][_a-zA-Z0-9]*$', value):
              return ast.EnumValue(value)
- 
+
 diff --git a/wandb/vendor/graphql-core-1.1/wandb_graphql/utils/is_valid_value.py b/wandb/vendor/graphql-core-1.1/wandb_graphql/utils/is_valid_value.py
 index b3d5d05..8b8bcd4 100644
 --- a/wandb/vendor/graphql-core-1.1/wandb_graphql/utils/is_valid_value.py
@@ -471,23 +471,23 @@ index b3d5d05..8b8bcd4 100644
 @@ -5,8 +5,6 @@
  import collections
  import json
- 
+
 -from six import string_types
 -
  from ..type import (GraphQLEnumType, GraphQLInputObjectType, GraphQLList,
                      GraphQLNonNull, GraphQLScalarType)
- 
+
 @@ -18,7 +16,7 @@ def is_valid_value(value, type):
      if isinstance(type, GraphQLNonNull):
          of_type = type.of_type
          if value is None:
 -            return [u'Expected "{}", found null.'.format(type)]
 +            return [f'Expected "{type}", found null.']
- 
+
          return is_valid_value(value, of_type)
- 
+
 @@ -27,12 +25,12 @@ def is_valid_value(value, type):
- 
+
      if isinstance(type, GraphQLList):
          item_type = type.of_type
 -        if not isinstance(value, string_types) and isinstance(value, collections.Iterable):
@@ -498,38 +498,38 @@ index b3d5d05..8b8bcd4 100644
                  for error in item_errors:
 -                    errors.append(u'In element #{}: {}'.format(i, error))
 +                    errors.append(f'In element #{i}: {error}')
- 
+
              return errors
- 
+
 @@ -41,18 +39,18 @@ def is_valid_value(value, type):
- 
+
      if isinstance(type, GraphQLInputObjectType):
          if not isinstance(value, collections.Mapping):
 -            return [u'Expected "{}", found not an object.'.format(type)]
 +            return [f'Expected "{type}", found not an object.']
- 
+
          fields = type.fields
          errors = []
- 
+
          for provided_field in sorted(value.keys()):
              if provided_field not in fields:
 -                errors.append(u'In field "{}": Unknown field.'.format(provided_field))
 +                errors.append(f'In field "{provided_field}": Unknown field.')
- 
+
          for field_name, field in fields.items():
              subfield_errors = is_valid_value(value.get(field_name), field.type)
 -            errors.extend(u'In field "{}": {}'.format(field_name, e) for e in subfield_errors)
 +            errors.extend(f'In field "{field_name}": {e}' for e in subfield_errors)
- 
+
          return errors
- 
+
 @@ -63,6 +61,6 @@ def is_valid_value(value, type):
      # a non-null value.
      parse_result = type.parse_value(value)
      if parse_result is None:
 -        return [u'Expected type "{}", found {}.'.format(type, json.dumps(value))]
 +        return [f'Expected type "{type}", found {json.dumps(value)}.']
- 
+
      return _empty_list
 diff --git a/wandb/vendor/graphql-core-1.1/wandb_graphql/utils/type_info.py b/wandb/vendor/graphql-core-1.1/wandb_graphql/utils/type_info.py
 index d81fd0d..6baf417 100644
@@ -542,12 +542,12 @@ index d81fd0d..6baf417 100644
  from ..type.definition import (GraphQLInputObjectType, GraphQLList,
                                 get_named_type, get_nullable_type,
 @@ -14,8 +12,7 @@ def pop(lst):
- 
- 
+
+
  # noinspection PyPep8Naming
 -@six.add_metaclass(visitor_meta.VisitorMeta)
 -class TypeInfo(object):
 +class TypeInfo(metaclass=visitor_meta.VisitorMeta):
      __slots__ = '_schema', '_type_stack', '_parent_type_stack', '_input_type_stack', '_field_def_stack', '_directive', \
                  '_argument', '_get_field_def_fn'
- 
+
