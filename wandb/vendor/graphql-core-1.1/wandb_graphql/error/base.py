@@ -1,4 +1,3 @@
-import six
 from ..language.location import get_location
 
 
@@ -6,7 +5,7 @@ class GraphQLError(Exception):
     __slots__ = 'message', 'nodes', 'stack', 'original_error', '_source', '_positions'
 
     def __init__(self, message, nodes=None, stack=None, source=None, positions=None):
-        super(GraphQLError, self).__init__(message)
+        super().__init__(message)
         self.message = message
         self.nodes = nodes
         self.stack = stack
@@ -32,7 +31,7 @@ class GraphQLError(Exception):
 
     def reraise(self):
         if self.stack:
-            six.reraise(type(self), self, self.stack)
+            raise self.with_traceback(self.stack)
         else:
             raise self
 

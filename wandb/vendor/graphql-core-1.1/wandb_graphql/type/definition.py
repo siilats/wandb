@@ -1,4 +1,3 @@
-from six.moves.collections_abc import Mapping, Hashable
 import collections
 import copy
 
@@ -189,7 +188,7 @@ def define_field_map(type, field_map):
     if callable(field_map):
         field_map = field_map()
 
-    assert isinstance(field_map, Mapping) and len(field_map) > 0, (
+    assert isinstance(field_map, collections.Mapping) and len(field_map) > 0, (
         '{} fields must be a mapping (dict / OrderedDict) with field names as keys or a '
         'function which returns such a mapping.'
     ).format(type)
@@ -199,7 +198,7 @@ def define_field_map(type, field_map):
         field_args = getattr(field, 'args', None)
 
         if field_args:
-            assert isinstance(field_args, Mapping), (
+            assert isinstance(field_args, collections.Mapping), (
                 '{}.{} args must be a mapping (dict / OrderedDict) with argument names as keys.'.format(type,
                                                                                                         field_name)
             )
@@ -408,7 +407,7 @@ class GraphQLEnumType(GraphQLType):
         self.values = define_enum_values(self, values)
 
     def serialize(self, value):
-        if isinstance(value, Hashable):
+        if isinstance(value, collections.Hashable):
             enum_value = self._value_lookup.get(value)
 
             if enum_value:
@@ -417,7 +416,7 @@ class GraphQLEnumType(GraphQLType):
         return None
 
     def parse_value(self, value):
-        if isinstance(value, Hashable):
+        if isinstance(value, collections.Hashable):
             enum_value = self._name_lookup.get(value)
 
             if enum_value:
@@ -442,7 +441,7 @@ class GraphQLEnumType(GraphQLType):
 
 
 def define_enum_values(type, value_map):
-    assert isinstance(value_map, Mapping) and len(value_map) > 0, (
+    assert isinstance(value_map, collections.Mapping) and len(value_map) > 0, (
         '{} values must be a mapping (dict / OrderedDict) with value names as keys.'.format(type)
     )
 
@@ -523,7 +522,7 @@ class GraphQLInputObjectType(GraphQLType):
         if callable(fields):
             fields = fields()
 
-        assert isinstance(fields, Mapping) and len(fields) > 0, (
+        assert isinstance(fields, collections.Mapping) and len(fields) > 0, (
             '{} fields must be a mapping (dict / OrderedDict) with field names as keys or a '
             'function which returns such a mapping.'
         ).format(self)

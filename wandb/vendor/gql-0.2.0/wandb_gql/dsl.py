@@ -1,8 +1,7 @@
-from six.moves.collections_abc import Iterable
+import collections
 import decimal
 from functools import partial
 
-import six
 from wandb_graphql.language import ast
 from wandb_graphql.language.printer import print_ast
 from wandb_graphql.type import (GraphQLField, GraphQLList,
@@ -61,7 +60,7 @@ def selections(*fields):
 def get_ast_value(value):
     if isinstance(value, ast.Node):
         return value
-    if isinstance(value, six.string_types):
+    if isinstance(value, str):
         return ast.StringValue(value=value)
     elif isinstance(value, bool):
         return ast.BooleanValue(value=value)
@@ -134,7 +133,7 @@ def query(*fields):
 
 
 def serialize_list(serializer, values):
-    assert isinstance(values, Iterable), 'Expected iterable, received "{}"'.format(repr(values))
+    assert isinstance(values, collections.Iterable), 'Expected iterable, received "{}"'.format(repr(values))
     return [serializer(v) for v in values]
 
 

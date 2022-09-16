@@ -1,4 +1,4 @@
-from six.moves.collections_abc import Iterable
+from collections import Iterable
 
 from .definition import GraphQLObjectType
 from .directives import GraphQLDirective, specified_directives
