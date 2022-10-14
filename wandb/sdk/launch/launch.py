@@ -138,6 +138,8 @@ def _run(
     launch_project = create_project_from_spec(launch_spec, api)
     launch_project = fetch_and_validate_project(launch_project, api)
 
+    print("JAMIE in _run")
+
     # construct runner config.
     runner_config: Dict[str, Any] = {}
     runner_config[PROJECT_SYNCHRONOUS] = synchronous
@@ -161,6 +163,8 @@ def _run(
         default_launch_config, build_config, registry_config
     )
     builder = builder_loader.load_builder(build_config)
+    print("builder is ")
+    print(builder)
     backend = loader.load_backend(resource, api, runner_config)
     if backend:
         submitted_run = backend.run(launch_project, builder, registry_config)

@@ -3,6 +3,7 @@ import logging
 import os
 import shlex
 import shutil
+import subprocess
 import sys
 import tempfile
 from typing import Any, Dict, List, Optional, Tuple
@@ -157,8 +158,21 @@ eval $CMD
 """
 
 
-def get_current_python_version() -> Tuple[str, str]:
-    full_version = sys.version.split()[0].split(".")
+def get_pyenv_version() -> Tuple[Optional[str], Optional[str]]:
+    """If the user has pyenv in the path, try to get Python version to use from it."""
+    try:
+        output = subprocess.run(
+            ["pyenv", "version-name"], capture_output=True, text=True
+        )
+        return get_python_version(output.stdout)
+    except FileNotFoundError:
+        pass
+    return [None, None]
+
+
+def get_python_version(version_str: str) -> Tuple[str, str]:
+    """Return a Tuple with major.minor and major as strings."""
+    full_version = version_str.split(".")
     major = full_version[0]
     version = ".".join(full_version[:2]) if len(full_version) >= 2 else major + ".0"
     return version, major
@@ -330,13 +344,15 @@ def generate_dockerfile(
         spl = launch_project.python_version.split(".")[:2]
         py_version, py_major = (".".join(spl), spl[0])
     else:
-        py_version, py_major = get_current_python_version()
+        py_version, py_major = get_pyenv_version()
+        if not py_version:
+            # Use current version
+            py_version, py_major = get_python_version(sys.version.split()[0])
 
     # ----- stage 1: build -----
     if launch_project.deps_type == "pip" or launch_project.deps_type is None:
-        python_build_image = "python:{}".format(
-            py_version
-        )  # use full python image for package installation
+        # use full python image for package installation
+        python_build_image = f"python:{py_version}"
     elif launch_project.deps_type == "conda":
         # neither of these images are receiving regular updates, latest should be pretty stable
         python_build_image = (

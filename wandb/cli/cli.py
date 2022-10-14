@@ -1065,7 +1065,7 @@ def sweep(
     "-c",
     metavar="FILE",
     help="Path to JSON file (must end in '.json') or JSON string which will be passed "
-    "as a launch config. Dictation how the launched run will be configured. ",
+    "as a launch config. Dictates how the launched run will be configured. ",
 )
 @click.option(
     "--queue",

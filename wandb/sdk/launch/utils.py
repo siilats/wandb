@@ -5,6 +5,7 @@ import platform
 import re
 import subprocess
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import click
@@ -13,6 +14,7 @@ import wandb
 from wandb import util
 from wandb.apis.internal import Api
 from wandb.errors import CommError, LaunchError
+from wandb.sdk.launch.github import GitHubReference, ReferenceType
 
 if TYPE_CHECKING:  # pragma: no cover
     from wandb.apis.public import Artifact as PublicArtifact
@@ -20,6 +22,9 @@ if TYPE_CHECKING:  # pragma: no cover
 
 # TODO: this should be restricted to just Git repos and not S3 and stuff like that
 _GIT_URI_REGEX = re.compile(r"^[^/|^~|^\.].*(git|bitbucket)")
+_HTTPS_PREFIX_REGEX = re.compile(r"^https://.+")
+_GIT_SSH_PREFIX_REGEX = re.compile(r"^git@.+")
+_GIT_COMMIT_REGEX = re.compile(r"[0-9a-f]{40}")
 _VALID_IP_REGEX = r"^https?://[0-9]+(?:\.[0-9]+){3}(:[0-9]+)?"
 _VALID_PIP_PACKAGE_REGEX = r"^[a-zA-Z0-9_.-]+$"
 _VALID_WANDB_REGEX = r"^https?://(api.)?wandb"
@@ -66,6 +71,14 @@ def _is_wandb_local_uri(uri: str) -> bool:
 
 def _is_git_uri(uri: str) -> bool:
     return bool(_GIT_URI_REGEX.match(uri))
+
+
+def _is_https(uri: str) -> bool:
+    return bool(_HTTPS_PREFIX_REGEX.match(uri))
+
+
+def _is_git_ssh(uri: str) -> bool:
+    return bool(_GIT_SSH_PREFIX_REGEX.match(uri))
 
 
 def sanitize_wandb_api_key(s: str) -> str:
@@ -224,9 +237,7 @@ def is_bare_wandb_uri(uri: str) -> bool:
     result = uri.split("/")[1:]
     # a bare wandb uri will have 4 parts, with the last being the run name
     # and the second last being "runs"
-    if len(result) == 4 and result[-2] == "runs":
-        return True
-    return False
+    return len(result) == 4 and result[-2] == "runs"
 
 
 def fetch_wandb_project_run_info(
@@ -412,6 +423,84 @@ def apply_patch(patch_string: str, dst_dir: str) -> None:
         )
     except subprocess.CalledProcessError:
         raise wandb.Error("Failed to apply diff.patch associated with run.")
+
+
+def fetch_githubref(dst_dir: str, githubref: GitHubReference) -> None:
+    """Fetch the repo into dst_dir and refine githubref based on what we learn."""
+    # We defer importing git until the last moment, because the import requires that the git
+    # executable is available on the PATH, so we only want to fail if we actually need it.
+    import git  # type: ignore
+
+    _logger.info("Fetching git repo")
+    repo = git.Repo.init(dst_dir)
+    origin = repo.create_remote("origin", githubref.repo_url())
+
+    # We fetch the origin so that we have branch and tag references
+    origin.fetch()
+
+    # Guess if this is a commit
+    commit = None
+    first_segment = githubref.path.split("/")[0]
+    if _GIT_COMMIT_REGEX.fullmatch(first_segment):
+        try:
+            commit = repo.commit(first_segment)
+            githubref.ref_type = ReferenceType.COMMIT
+            githubref.ref = first_segment
+            githubref.path = githubref.path[len(first_segment) + 1 :]
+            head = repo.create_head(first_segment, commit)
+            head.checkout()
+        except ValueError:
+            # Apparently it just looked like a commit
+            pass
+
+    # If not a commit, check to see if path indicates a branch name
+    branch = None
+    if not commit:
+        for ref in repo.references:
+            if not isinstance(ref, git.refs.remote.RemoteReference):
+                # Skip tag references
+                continue
+            refname = ref.name[7:]  # Trim off "origin/"
+            if githubref.path.startswith(refname):
+                githubref.ref_type = ReferenceType.BRANCH
+                githubref.ref = branch = refname
+                githubref.path = githubref.path[len(refname) + 1 :]
+                head = repo.create_head(branch, origin.refs[branch])
+                head.checkout()
+                break
+
+    # Must be on default branch. Try to figure out what that is.
+    # TODO: Is there a better way to do this?
+    default_branch = None
+    if not commit and not branch:
+        for ref in repo.references:
+            if not isinstance(ref, git.refs.remote.RemoteReference):
+                # Skip tag references
+                continue
+            refname = ref.name[7:]  # Trim off "origin/"
+            if refname == "main":
+                default_branch = "main"
+                break
+            if refname == "master":
+                default_branch = "master"
+                # Keep looking in case we also have a main, which we let take precedence
+        if not default_branch:
+            raise LaunchError(
+                f"Unable to determine what to checkout from {githubref.url()}"
+            )
+        githubref.default_branch = default_branch
+        head = repo.create_head(default_branch, origin.refs[default_branch])
+        head.checkout()
+
+    # Now that we've checked something out, try to extract directory and entry point from what remains
+    path = Path(dst_dir, githubref.path)
+    if path.exists():
+        if path.is_file():
+            githubref.entry_point = path.name
+            githubref.directory = githubref.path[: -len(path.name)]
+        else:
+            githubref.directory = githubref.path
+        githubref.path = None
 
 
 def _fetch_git_repo(dst_dir: str, uri: str, version: Optional[str]) -> str:

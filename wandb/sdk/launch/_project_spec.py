@@ -16,6 +16,7 @@ import wandb.docker as docker
 from wandb.apis.internal import Api
 from wandb.apis.public import Artifact as PublicArtifact
 from wandb.errors import CommError, LaunchError
+from wandb.sdk.launch.github import parse_github_uri
 from wandb.sdk.lib.runid import generate_id
 
 from . import utils
@@ -73,7 +74,8 @@ class LaunchProject:
         self.name = name  # TODO: replace with run_id
         self.resource = resource
         self.resource_args = resource_args
-        self.build_image: bool = docker_config.get("build_image", False)
+        # JCR: I don't see this being used anywhere?
+        # self.build_image: bool = docker_config.get("build_image", False)
         self.python_version: Optional[str] = docker_config.get("python_version")
         self.cuda_version: Optional[str] = docker_config.get("cuda_version")
         self._base_image: Optional[str] = docker_config.get("base_image")
@@ -114,10 +116,13 @@ class LaunchProject:
             _logger.info(f"URI {self.uri} indicates a wandb uri")
             self.source = LaunchSource.WANDB
             self.project_dir = tempfile.mkdtemp()
-        elif self.uri is not None and utils._is_git_uri(self.uri):
+        elif self.uri is not None and (
+            utils._is_https(self.uri) or utils._is_git_ssh(self.uri)
+        ):
             _logger.info(f"URI {self.uri} indicates a git uri")
             self.source = LaunchSource.GIT
             self.project_dir = tempfile.mkdtemp()
+            self._initialize_default_entry_point()
         elif self.uri is not None and "placeholder-" in self.uri:
             wandb.termlog(
                 f"{LOG_PREFIX}Launch received placeholder URI, replacing with local path."
@@ -133,11 +138,17 @@ class LaunchProject:
                     "Assumed URI supplied is a local path but path is not valid"
                 )
             self.source = LaunchSource.LOCAL
-            self.project_dir = self.uri
+            self.project_dir = os.path.abspath(self.uri)
+            if os.path.isfile(self.project_dir):
+                self.project_dir = os.path.dirname(self.project_dir)
+            self._initialize_default_entry_point()
         if launch_spec.get("resource_args"):
             self.resource_args = launch_spec["resource_args"]
 
-        self.aux_dir = tempfile.mkdtemp()
+        self.use_custom_dockerfile: bool = os.path.basename(self.uri) == "Dockerfile"
+
+        # Jamie - I don't think this is used anywhere
+        # self.aux_dir = tempfile.mkdtemp()
         self.clear_parameter_run_config_collisions()
 
     @property
@@ -178,6 +189,20 @@ class LaunchProject:
             return wandb.util.make_docker_image_name_safe(_image_tag)
         return None
 
+    def _initialize_default_entry_point(self) -> None:
+        if self._entry_points:
+            return
+        # TODO: Won't properly handle a directory name ending in .py
+        program_name = os.path.basename(self.uri) or "main.py"
+        _, ext = os.path.splitext(program_name)
+        if ext == ".py":
+            entry_point = ["python", program_name]
+            self.add_entry_point(entry_point)
+        elif ext == ".sh":
+            command = os.environ.get("SHELL", "bash")
+            entry_point = [command, program_name]
+            self.add_entry_point(entry_point)
+
     @property
     def image_uri(self) -> str:
         if self.docker_image:
@@ -186,7 +211,6 @@ class LaunchProject:
 
     @property
     def image_tag(self) -> str:
-
         return self._image_tag[:IMAGE_TAG_MAX_LENGTH]
 
     @property
@@ -212,7 +236,7 @@ class LaunchProject:
         # assuming project only has 1 entry point, pull that out
         # tmp fn until we figure out if we want to support multiple entry points or not
         if not self._entry_points:
-            if not self.docker_image:
+            if not self.docker_image and not self.use_custom_dockerfile:
                 raise LaunchError(
                     "Project must have at least one entry point unless docker image is specified."
                 )
@@ -345,33 +369,46 @@ class LaunchProject:
                 self.project_dir,
             )
 
-            if not self._entry_points:
-                _, ext = os.path.splitext(program_name)
-                if ext == ".py":
-                    entry_point = ["python", program_name]
-                elif ext == ".sh":
-                    command = os.environ.get("SHELL", "bash")
-                    entry_point = [command, program_name]
-                else:
-                    raise LaunchError(f"Unsupported entrypoint: {program_name}")
-                self.add_entry_point(entry_point)
             self.override_args = utils.merge_parameters(
                 self.override_args, run_info["args"]
             )
         else:
-            assert utils._GIT_URI_REGEX.match(self.uri), (
-                "Non-wandb URI %s should be a Git URI" % self.uri
-            )
-            if not self._entry_points:
-                wandb.termlog(
-                    f"{LOG_PREFIX}Entry point for repo not specified, defaulting to python main.py"
+            # TODO: JCR - we are more flexible now
+            # assert utils._GIT_URI_REGEX.match(self.uri), (
+            #     "Non-wandb URI %s should be a Git URI" % self.uri
+            # )
+            githubref = parse_github_uri(self.uri)
+            if githubref:
+                # TODO: Need to allow override with self.git_version
+                utils.fetch_githubref(self.project_dir, githubref)
+                if githubref.directory:
+                    self.project_dir = os.path.join(
+                        self.project_dir, githubref.directory
+                    )
+                # TODO: Allow sh, Dockerfile
+                # entrypoint_file = githubref.entry_point or "main.py"
+                # if entrypoint_file == "Dockerfile":
+                #     self.source = LaunchSource.DOCKER
+                # elif entrypoint_file.endswith(".py"):
+                #     self.add_entry_point(["python", entrypoint_file])
+            else:
+                # TODO: JCR - this should have been initialized with a default before this point
+                assert self._entry_points
+                # if not self._entry_points:
+                #     wandb.termlog(
+                #         f"{LOG_PREFIX}Entry point for repo not specified, defaulting to python main.py"
+                #     )
+                #     self.add_entry_point(["python", "main.py"])
+                branch_name = utils._fetch_git_repo(
+                    self.project_dir, self.uri, self.git_version
                 )
-                self.add_entry_point(["python", "main.py"])
-            branch_name = utils._fetch_git_repo(
-                self.project_dir, self.uri, self.git_version
-            )
-            if self.git_version is None:
-                self.git_version = branch_name
+                if self.git_version is None:
+                    self.git_version = branch_name
+
+            # If there is a Dockerfile in the downloaded dir, use it.
+            print("in fetch project local")
+            if os.path.isfile(os.path.join(self.project_dir, "Dockerfile")):
+                self.use_custom_dockerfile = True
 
 
 class EntryPoint:
@@ -468,7 +505,12 @@ def fetch_and_validate_project(
     if launch_project.source == LaunchSource.DOCKER:
         return launch_project
     if launch_project.source == LaunchSource.LOCAL:
-        if not launch_project._entry_points:
+        print("in fetch and validate")
+        print(launch_project.project_dir)
+        if os.path.exists(os.path.join(launch_project.project_dir, "Dockerfile")):
+            print("Using custom dockerfile")
+            launch_project.use_custom_dockerfile = True
+        elif not launch_project._entry_points:
             wandb.termlog(
                 f"{LOG_PREFIX}Entry point for repo not specified, defaulting to `python main.py`"
             )
@@ -514,4 +556,6 @@ def create_metadata_file(
                 "dockerfile_contents": sanitized_dockerfile_contents,
             },
             f,
+            indent=4,
         )
+        f.write("\n")

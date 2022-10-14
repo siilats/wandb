@@ -44,9 +44,17 @@ class DockerBuilder(AbstractBuilder):
         else:
             image_uri = launch_project.image_uri
         entry_cmd = get_entry_point_command(entrypoint, launch_project.override_args)
-        dockerfile_str = generate_dockerfile(
-            launch_project, entrypoint, launch_project.resource, self.type
-        )
+        if launch_project.use_custom_dockerfile:
+            with open(
+                os.path.join(launch_project.project_dir, "Dockerfile")
+            ) as dockerfile_in:
+                dockerfile_str = dockerfile_in.read()
+        else:
+            dockerfile_str = generate_dockerfile(
+                launch_project, entrypoint, launch_project.resource, self.type
+            )
+        print("dockerfile_str")
+        print(dockerfile_str)
         create_metadata_file(
             launch_project,
             image_uri,
