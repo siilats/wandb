@@ -1,4 +1,4 @@
-from collections import Iterable
+from collections.abc import Iterable
 
 from .definition import GraphQLObjectType
 from .directives import GraphQLDirective, specified_directives
