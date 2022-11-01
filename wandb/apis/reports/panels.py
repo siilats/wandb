@@ -11,5 +11,6 @@ from .reports import (  # ConfusionMatrix,; DataFrames,; MultiRunTable,; Vega,; 
     RunComparer,
     ScalarChart,
     ScatterPlot,
+    WeaveTablePanel,
     CustomChart,
 )
