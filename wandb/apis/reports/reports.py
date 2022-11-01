@@ -801,7 +801,7 @@ class Vega(Panel):
         return "Vega"
 
 
-class Vega2(Panel):
+class CustomChart(Panel):
     @property
     def view_type(self) -> str:
         return "Vega2"
@@ -1824,7 +1824,7 @@ panel_mapping = {
     "Data Frame Table": DataFrames,
     "Multi Run Table": MultiRunTable,
     "Vega": Vega,
-    "Vega2": Vega2,
+    "Vega2": CustomChart,
     "Vega3": Vega3,
     "Weave": WeavePanel,
 }
