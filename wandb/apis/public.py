@@ -416,7 +416,7 @@ class Api:
             kwargs["entity"] = self.default_entity
         return Run.create(self, **kwargs)
 
-    @requires("report-editing:v0")
+    # @requires("report-editing:v0")
     def create_report(
         self,
         project: str,
@@ -434,7 +434,7 @@ class Api:
             project, entity, title, description, width, blocks
         )
 
-    @requires("report-editing:v0")
+    # @requires("report-editing:v0")
     def load_report(self, path: str) -> "wandb.apis.reports.Report":
         """
         Get report at a given path.
