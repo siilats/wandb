@@ -1157,26 +1157,14 @@ class UnknownBlock(Block):
 
 
 class PanelGrid(Block):
-    def __init__(self, runsets=None, panels=None, *args, **kwargs):
+    def __init__(self, panels=None, runsets=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._spec = self._default_panel_grid_spec()
-        self.runsets = coalesce(runsets, self._default_runsets())
         self.panels = coalesce(panels, self._default_panels())
+        self.runsets = coalesce(runsets, self._default_runsets())
 
-    runsets: list = Attr(json_path="spec.metadata.runSets")
     panels: list = Attr(json_path="spec.metadata.panelBankSectionConfig.panels")
-
-    @runsets.getter
-    def runsets(self):
-        json_path = self._get_path("runsets")
-        specs = nested_get(self, json_path)
-        return [Runset.from_json(spec) for spec in specs]
-
-    @runsets.setter
-    def runsets(self, new_runsets):
-        json_path = self._get_path("runsets")
-        new_specs = [rs.spec for rs in new_runsets]
-        nested_set(self, json_path, new_specs)
+    runsets: list = Attr(json_path="spec.metadata.runSets")
 
     @panels.getter
     def panels(self):
@@ -1209,6 +1197,18 @@ class PanelGrid(Block):
         new_panels = self._get_specific_keys_for_certain_plots(new_panels, setting=True)
 
         new_specs = [p.spec for p in fix_collisions(new_panels)]
+        nested_set(self, json_path, new_specs)
+        
+    @runsets.getter
+    def runsets(self):
+        json_path = self._get_path("runsets")
+        specs = nested_get(self, json_path)
+        return [Runset.from_json(spec) for spec in specs]
+
+    @runsets.setter
+    def runsets(self, new_runsets):
+        json_path = self._get_path("runsets")
+        new_specs = [rs.spec for rs in new_runsets]
         nested_set(self, json_path, new_specs)
 
     @staticmethod
