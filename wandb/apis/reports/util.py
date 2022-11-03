@@ -1,23 +1,7 @@
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    TypeVar,
-    Union,
-    get_type_hints,
-)
+from typing import Any, Dict, List, Optional, Tuple, TypeVar, Union, get_type_hints
 
-import wandb
-from wandb.sdk.wandb_require_helpers import RequiresReportEditingMixin
-
+from ..public import PanelMetricsHelper
 from .validators import UNDEFINED_TYPE, TypeValidator, Validator
-
-if TYPE_CHECKING:
-    import wandb.apis.reports.reports
-
 
 Func = TypeVar("Func")
 T = TypeVar("T")
@@ -271,7 +255,7 @@ class Panel(Base, SubclassOnlyABC):
         self._spec["viewType"] = self.view_type
         self._spec["__id__"] = generate_name()
         self.layout = coalesce(layout, self._default_panel_layout())
-        self.panel_metrics_helper = wandb.apis.public.PanelMetricsHelper()
+        self.panel_metrics_helper = PanelMetricsHelper()
 
     @property
     def view_type(self) -> str:
