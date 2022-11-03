@@ -1168,14 +1168,14 @@ class UnknownBlock(Block):
 
 
 class PanelGrid(Block):
-    panels: list = Attr(json_path="spec.metadata.panelBankSectionConfig.panels")
     runsets: list = Attr(json_path="spec.metadata.runSets")
+    panels: list = Attr(json_path="spec.metadata.panelBankSectionConfig.panels")
 
-    def __init__(self, panels=None, runsets=None, *args, **kwargs):
+    def __init__(self, runsets=None,panels=None,  *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._spec = self._default_panel_grid_spec()
-        self.panels = coalesce(panels, self._default_panels())
         self.runsets = coalesce(runsets, self._default_runsets())
+        self.panels = coalesce(panels, self._default_panels())
 
     @panels.getter
     def panels(self):
