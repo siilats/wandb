@@ -2,7 +2,7 @@
 from inspect import cleandoc
 
 from ... import termlog
-from .blocks import (
+from ._blocks import (
     H1,
     H2,
     H3,
@@ -29,7 +29,7 @@ from .blocks import (
     WeaveTableBlock,
 )
 from .helpers import LineKey, PCColumn
-from .panels import (
+from ._panels import (
     BarPlot,
     CodeComparer,
     CustomChart,
