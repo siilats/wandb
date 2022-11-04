@@ -1,26 +1,8 @@
-import inspect
-import json
-import re
-import urllib
-from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict
-from typing import List as LList
-from typing import Optional, Union
+from typing import Optional
 
-import wandb
-
+from ..public import Run
 from .runset import Runset
-from .util import (
-    Attr,
-    Base,
-    Block,
-    Panel,
-    coalesce,
-    fix_collisions,
-    generate_name,
-    nested_get,
-    nested_set,
-)
+from .util import Attr, Base, Panel
 
 
 class LineKey:
@@ -34,7 +16,7 @@ class LineKey:
         return f'LineKey(key="{self.key}")'
 
     @classmethod
-    def from_run(cls, run: "wandb.apis.public.Run", metric: str) -> "LineKey":
+    def from_run(cls, run: "Run", metric: str) -> "LineKey":
         key = f"{run.id}:{metric}"
         return cls(key)
 
