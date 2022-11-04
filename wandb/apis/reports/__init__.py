@@ -1,5 +1,5 @@
-# flake8: noqa
 from inspect import cleandoc
+from colorama import Fore
 
 from ... import termlog
 from . import blocks, helpers, panels
@@ -11,11 +11,12 @@ from .runset import Runset
 
 termlog(
     cleandoc(
-        """
-        Thanks for trying out the Report API!
-          ∟ see panels:          \033[92m`wr.panels.<tab>`
-          ∟ see blocks:          \033[92m`wr.blocks.<tab>`
-          ∟ see everything else: \033[92m`wr.<tab>`
+        f"""
+        Thanks for trying out the Report API!  Try out tab completion to see what's available.
+          ∟ everything:   {Fore.GREEN}`wr.<tab>`
+              ∟ panels:   {Fore.GREEN}`wr.panels.<tab>`
+              ∟ blocks:   {Fore.GREEN}`wr.blocks.<tab>`
+              ∟ helpers:  {Fore.GREEN}`wr.helpers.<tab>`
         
         If you have issues, please make a ticket on JIRA.
         """
