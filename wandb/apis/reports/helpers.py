@@ -9,17 +9,8 @@ from typing import Optional, Union
 
 import wandb
 
-from .util import (
-    Attr,
-    Base,
-    Block,
-    Panel,
-    coalesce,
-    fix_collisions,
-    generate_name,
-    nested_get,
-    nested_set,
-)
+from .base import Base, Block, Panel
+from .util import Attr, coalesce, fix_collisions, generate_name, nested_get, nested_set
 
 
 class LineKey:

@@ -10,8 +10,9 @@ from ... import termlog, termwarn
 from ...sdk.lib import ipython
 from ._blocks import P, PanelGrid, UnknownBlock, block_mapping
 from ._panels import ParallelCoordinatesPlot, ScatterPlot
+from .base import Base, Block
 from .mutations import UPSERT_VIEW
-from .util import Attr, Base, Block, coalesce, generate_name, nested_get, nested_set
+from .util import Attr, coalesce, generate_name, nested_get, nested_set
 from .validators import OneOf, TypeValidator
 
 

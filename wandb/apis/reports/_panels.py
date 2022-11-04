@@ -1,7 +1,8 @@
 from typing import Optional, Union
 
+from .base import Panel
 from .helpers import LineKey, PCColumn
-from .util import Attr, Panel, coalesce, nested_get, nested_set
+from .util import Attr, coalesce, nested_get, nested_set
 from .validators import (
     AGGFUNCS,
     CODE_COMPARE_DIFF,

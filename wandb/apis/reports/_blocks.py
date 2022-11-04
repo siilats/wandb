@@ -7,8 +7,9 @@ from typing import Union
 from ... import __version__ as wandb_ver
 from ... import termlog, termwarn
 from ._panels import ParallelCoordinatesPlot, ScatterPlot, UnknownPanel, panel_mapping
+from .base import Base, Block, Panel
 from .runset import Runset
-from .util import Attr, Base, Block, coalesce, fix_collisions, nested_get, nested_set
+from .util import Attr, TypeValidator, coalesce, fix_collisions, nested_get, nested_set
 
 
 class UnknownBlock(Block):
@@ -16,8 +17,14 @@ class UnknownBlock(Block):
 
 
 class PanelGrid(Block):
-    runsets: list = Attr(json_path="spec.metadata.runSets")
-    panels: list = Attr(json_path="spec.metadata.panelBankSectionConfig.panels")
+    runsets: list = Attr(
+        json_path="spec.metadata.runSets",
+        validators=[TypeValidator(Runset, how="keys")],
+    )
+    panels: list = Attr(
+        json_path="spec.metadata.panelBankSectionConfig.panels",
+        validators=[TypeValidator(Panel, how="keys")],
+    )
     custom_run_colors: dict = Attr(json_path="spec.metadata.customRunColors")
 
     def __init__(
