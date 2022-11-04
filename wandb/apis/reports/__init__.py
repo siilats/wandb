@@ -1,4 +1,5 @@
 from inspect import cleandoc
+
 from colorama import Fore
 
 from ... import termlog
