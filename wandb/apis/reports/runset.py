@@ -1,8 +1,7 @@
 from typing import Optional
 
 from ..public import Api, PythonMongoishQueryGenerator, QueryGenerator, Runs
-from .base import Base
-from .util import Attr, coalesce, generate_name, nested_get, nested_set
+from .util import Attr, Base, coalesce, generate_name, nested_get, nested_set
 
 
 class Runset(Base):

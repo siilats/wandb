@@ -7,9 +7,18 @@ from typing import Union
 from ... import __version__ as wandb_ver
 from ... import termlog, termwarn
 from ._panels import ParallelCoordinatesPlot, ScatterPlot, UnknownPanel, panel_mapping
-from .base import Base, Block, Panel
 from .runset import Runset
-from .util import Attr, TypeValidator, coalesce, fix_collisions, nested_get, nested_set
+from .util import (
+    Attr,
+    Base,
+    Block,
+    Panel,
+    TypeValidator,
+    coalesce,
+    fix_collisions,
+    nested_get,
+    nested_set,
+)
 
 
 class UnknownBlock(Block):

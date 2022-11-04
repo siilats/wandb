@@ -1,9 +1,11 @@
 from typing import Any, Dict, List, Optional, Tuple, TypeVar, Union, get_type_hints
 
+from ..public import PanelMetricsHelper
 from .validators import UNDEFINED_TYPE, TypeValidator, Validator
 
 Func = TypeVar("Func")
 T = TypeVar("T")
+V = TypeVar("V")
 
 
 def generate_name(length: int = 12) -> str:
@@ -224,9 +226,57 @@ class ShortReprMixin:
         return x is None or x == {}
 
 
+class Base(SubclassOnlyABC, ShortReprMixin):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._spec = {}
+
+    @property
+    def spec(self) -> Dict[str, Any]:
+        return self._spec
+
+    @classmethod
+    def from_json(cls, spec: Dict[str, Any]) -> T:
+        obj = cls()
+        obj._spec = spec
+        return obj
+
+    def _get_path(self, var: str) -> str:
+        return vars(type(self))[var].path_or_name
+
+
+class Panel(Base, SubclassOnlyABC):
+    layout: dict = Attr(json_path="spec.layout")
+
+    def __init__(
+        self, layout: Dict[str, int] = None, *args: Any, **kwargs: Any
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self._spec["viewType"] = self.view_type
+        self._spec["__id__"] = generate_name()
+        self.layout = coalesce(layout, self._default_panel_layout())
+        self.panel_metrics_helper = PanelMetricsHelper()
+
+    @property
+    def view_type(self) -> str:
+        return "UNKNOWN PANEL"
+
+    @property
+    def config(self) -> Dict[str, Any]:
+        return self._spec["config"]
+
+    @staticmethod
+    def _default_panel_layout() -> Dict[str, int]:
+        return {"x": 0, "y": 0, "w": 8, "h": 6}
+
+
+class Block(Base, SubclassOnlyABC):
+    pass
+
+
 def fix_collisions(
-    panels: "List[wandb.apis.reports.reports.Panel]",
-) -> "List[wandb.apis.reports.reports.Panel]":
+    panels: "List[Panel]",
+) -> "List[Panel]":
     x_max = 24
 
     for i, p1 in enumerate(panels):
@@ -248,8 +298,8 @@ def fix_collisions(
 
 
 def collides(
-    p1: "wandb.apis.reports.reports.Panel",
-    p2: "wandb.apis.reports.reports.Panel",
+    p1: "Panel",
+    p2: "Panel",
 ) -> bool:
     l1, l2 = p1.layout, p2.layout
 
@@ -266,9 +316,9 @@ def collides(
 
 
 def shift(
-    p1: "wandb.apis.reports.reports.Panel",
-    p2: "wandb.apis.reports.reports.Panel",
-) -> "Tuple[wandb.apis.reports.reports.Panel, wandb.apis.reports.reports.Panel]":
+    p1: "Panel",
+    p2: "Panel",
+) -> "Tuple[Panel, Panel]":
     l1, l2 = p1.layout, p2.layout
 
     x = l1["x"] + l1["w"] - l2["x"]

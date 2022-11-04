@@ -4,15 +4,15 @@ import urllib
 from copy import deepcopy
 from typing import List as LList
 
-from ... import Api
 from ... import __version__ as wandb_ver
 from ... import termlog, termwarn
 from ...sdk.lib import ipython
+from ..public import Api, RetryingClient
 from ._blocks import P, PanelGrid, UnknownBlock, block_mapping
 from ._panels import ParallelCoordinatesPlot, ScatterPlot
-from .base import Base, Block
 from .mutations import UPSERT_VIEW
-from .util import Attr, coalesce, generate_name, nested_get, nested_set
+from .runset import Runset
+from .util import Attr, Base, Block, coalesce, generate_name, nested_get, nested_set
 from .validators import OneOf, TypeValidator
 
 
