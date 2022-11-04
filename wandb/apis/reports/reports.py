@@ -157,9 +157,10 @@ class Report(Base):
 
         # Check runsets with `None` for project and replace with the report's project.
         # We have to do this here because RunSets don't know about their report until they're added to it.
-        for rs in self.runsets:
-            if rs.project is None:
-                rs.project = self.project
+        if self.runsets:
+            for rs in self.runsets:
+                if rs.project is None:
+                    rs.project = self.project
 
         # For PC and Scatter, we need to use slightly different values, so update if possible.
         # This only happens on set, and only when assigned to a panel grid because that is
