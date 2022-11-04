@@ -5,7 +5,6 @@ from .validators import UNDEFINED_TYPE, TypeValidator, Validator
 
 Func = TypeVar("Func")
 T = TypeVar("T")
-V = TypeVar("V")
 
 
 def generate_name(length: int = 12) -> str:
