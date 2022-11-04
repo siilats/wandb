@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, Optional, Tuple, TypeVar, Union, get_type_hints
 
-from ..public import PanelMetricsHelper
 from .validators import UNDEFINED_TYPE, TypeValidator, Validator
 
 Func = TypeVar("Func")
