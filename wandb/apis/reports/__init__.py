@@ -6,7 +6,7 @@ from . import blocks, helpers, panels
 from .blocks import *
 from .helpers import LineKey, PCColumn
 from .panels import *
-from .reports import Report
+from .report import Report
 from .runset import Runset
 
 termlog(
