@@ -2,47 +2,10 @@
 from inspect import cleandoc
 
 from ... import termlog
-from ._blocks import (
-    H1,
-    H2,
-    H3,
-    BlockQuote,
-    CalloutBlock,
-    CheckedList,
-    CodeBlock,
-    Gallery,
-    HorizontalRule,
-    Image,
-    InlineCode,
-    InlineLaTeX,
-    LaTeXBlock,
-    MarkdownBlock,
-    OrderedList,
-    P,
-    PanelGrid,
-    SoundCloud,
-    Spotify,
-    TableOfContents,
-    Twitter,
-    UnorderedList,
-    Video,
-    WeaveTableBlock,
-)
+from . import blocks, panels, helpers
 from .helpers import LineKey, PCColumn
-from ._panels import (
-    BarPlot,
-    CodeComparer,
-    CustomChart,
-    LinePlot,
-    MarkdownPanel,
-    MediaBrowser,
-    ParallelCoordinatesPlot,
-    ParameterImportancePlot,
-    RunComparer,
-    ScalarChart,
-    ScatterPlot,
-    WeaveTablePanel,
-)
+from .blocks import *
+from .panels import *
 from .reports import Report
 from .runset import Runset
 
