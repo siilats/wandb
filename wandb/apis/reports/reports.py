@@ -9,8 +9,8 @@ from ... import __version__ as wandb_ver
 from ... import termlog, termwarn
 from ...sdk.lib import ipython
 from ._blocks import P, PanelGrid, UnknownBlock, block_mapping
-from .mutations import UPSERT_VIEW
 from ._panels import ParallelCoordinatesPlot, ScatterPlot
+from .mutations import UPSERT_VIEW
 from .util import Attr, Base, Block, coalesce, generate_name, nested_get, nested_set
 from .validators import OneOf, TypeValidator
 

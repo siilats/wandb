@@ -2,9 +2,9 @@
 from inspect import cleandoc
 
 from ... import termlog
-from . import blocks, panels, helpers
-from .helpers import LineKey, PCColumn
+from . import blocks, helpers, panels
 from .blocks import *
+from .helpers import LineKey, PCColumn
 from .panels import *
 from .reports import Report
 from .runset import Runset
