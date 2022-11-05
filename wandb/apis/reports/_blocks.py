@@ -89,7 +89,7 @@ class PanelGrid(Block):
         json_path = self._get_path("custom_run_colors")
         id_colors = nested_get(self, json_path)
 
-        def is_groupstr(s):
+        def is_groupid(s):
             for rs in self.runsets:
                 if rs.spec["id"] in s:
                     return True
@@ -99,8 +99,8 @@ class PanelGrid(Block):
         for id, c in id_colors.items():
             if id == "ref":
                 continue
-            if is_groupstr(id):
-                key = self._groupstr_to_ordertuple(id)
+            if is_groupid(id):
+                key = self._groupid_to_ordertuple(id)
             else:
                 key = self._run_id_to_name(id)
             color_settings[key] = c
@@ -112,7 +112,7 @@ class PanelGrid(Block):
         color_settings = {}
         for name, c in new_custom_run_colors.items():
             if isinstance(id, tuple):
-                key = self._ordertuple_to_groupstr(name)
+                key = self._ordertuple_to_groupid(name)
             else:
                 key = self._run_name_to_id(name)
             color_settings[key] = c
@@ -140,7 +140,7 @@ class PanelGrid(Block):
             if rs.name == name:
                 return rs.spec["id"]
 
-    def _ordertuple_to_groupstr(self, ordertuple):
+    def _ordertuple_to_groupid(self, ordertuple):
         rs = self.runsets[0]
         rs_name, rest = ordertuple[0], ordertuple[1:]
         id = self._rs_name_to_id(rs_name)
@@ -149,9 +149,9 @@ class PanelGrid(Block):
         linked = "-".join(kvs)
         return f"{id}-run:{linked}"
 
-    def _groupstr_to_ordertuple(self, groupstr):
+    def _groupid_to_ordertuple(self, groupid):
         rs = self.runsets[0]
-        id, rest = groupstr.split("-run:")
+        id, rest = groupid.split("-run:")
         kvs = rest.split("-")
         kvs = [rs.pm_query_generator.pc_back_to_front(v) for v in kvs]
         keys, ordertuple = zip(*[kv.split(":") for kv in kvs])
